@@ -31,6 +31,7 @@ gitDF = jsonlite::fromJSON(jsonlite::toJSON(json1))
 
 # Subset data.frame
 gitDF[gitDF$full_name == "jtleek/datasharing", "created_at"] 
+#install all needed packages
 install.packages("jsonlite")
 install.packages("httr")
 install.packages("httpuv")
@@ -62,8 +63,8 @@ getToken <- config(token = githubToken)
 
 
 
-#Returns a dataframe with information on the Current Users Followers 
-getFollowers <- function(ofarreco)
+#Returns a dataframe with information on the Current Users Followers, current user is Dirk Wetter 
+getFollowers <- function(drwetter)
 {
   i <- 1
   x <- 1
@@ -81,4 +82,25 @@ getFollowers <- function(ofarreco)
     followersDF <- rbind(followersDF, currentFollowersDF)
   }
   return (followersDF)
+}
+
+#Returns a dataframe with information on the Current Users repositoryitories, current user Dirk Wetter
+getrepositoryitory <- function(drwetter)
+{
+  i <- 1
+  x <- 1
+  repositoryitoryDF <- data_frame()
+  while(x!=0)
+  {
+    repository <- GET( paste0("https://api.github.com/users/", username, "/repository?per_page=100&page=", i),getToken)
+    repositoryContent <- content(repository)
+    currentrepositoryitoryDF <- lapply(repositoryContent, function(x) 
+    {
+      df <- data_frame(repo = x$name, id = x$id, commits = x$git_commits_url, language = x$languages) #language = x$language)
+    }) %>% bind_rows()
+    i <- i+1
+    x <- length(repositoryContent)
+    repositoryDF <- rbind(repositoryDF, currentrepositoryDF)
+  }
+  return (repositoryDF)
 }
