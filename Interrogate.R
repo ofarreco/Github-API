@@ -61,46 +61,82 @@ myApplication <- oauth_app(appname = "Rstudio",
 githubToken <- oauth2.0_token(oauth_endpoints("github"), myApplication)
 getToken <- config(token = githubToken)
 
+#Used account of Dirk Wetter to produce plots.
+#Used his account as it has more followers and would produce more accurate results.
+#Big sample size produces better results.
+#Username is drwetter.
 
+#Began to interrogate Dirk Wetter's account to produce graphs, by first looking at his followers.
+myData = GET("https://api.github.com/users/drwetter/followers?per_page=100;", getToken)
+stop_for_status(myData)
+extract = content(myData)
+#Converts into dataframe
+githubDB = jsonlite::fromJSON(jsonlite::toJSON(extract))
+githubDB$login
 
-#Returns a dataframe with information on the Current Users Followers, current user is Dirk Wetter 
-getFollowers <- function(drwetter)
+#Retrieve a list of usernames
+id = githubDB$login
+user_ids = c(id)
+
+#Create an empty vector and data.frame
+users = c()
+usersDB = data.frame(
+  username = integer(),
+  following = integer(),
+  followers = integer(),
+  repos = integer(),
+  dateCreated = integer()
+)
+
+#Loops through users and adds to list
+for(i in 1:length(user_ids))
 {
-  i <- 1
-  x <- 1
-  followersDF <- data_frame()
-  while(x!=0)
+  
+  followingURL = paste("https://api.github.com/users/", user_ids[i], "/following", sep = "")
+  followingReq = GET(followingURL, getToken)
+  followingCont = content(followingReq)
+  
+  #Doesn't add users if they don't have any followers
+  if(length(followingCont) == 0)
   {
-    followers <- GET( paste0("https://api.github.com/users/", username, "/followers?per_page=100&page=", i),getToken)
-    followersContent <- content(followers)
-    currentFollowersDF <- lapply(followersContent, function(x) 
-    {
-      df <- data_frame(user = x$login, userID = x$id, followersURL = x$followers_url, followingURL = x$following_url)
-    }) %>% bind_rows()
-    i <- i+1
-    x <- length(followersContent)
-    followersDF <- rbind(followersDF, currentFollowersDF)
+    next
   }
-  return (followersDF)
-}
+  
+  followingDF = jsonlite::fromJSON(jsonlite::toJSON(followingCont))
+  followingLogin = followingDF$login
+  
+  #Loops through 'following' users
+  for (j in 1:length(followingLogin))
+  {
+    #Checks for duplicate users
+    if (is.element(followingLogin[j], users) == FALSE)
+    {
+      #Adds user to the current list
+      users[length(users) + 1] = followingLogin[j]
+      
+      #Obtains info from each user
+      followingURLTwo = paste("https://api.github.com/users/", followingLogin[j], sep = "")
+      followingTwo = GET(followingURLTwo, getToken)
+      followingContTwo = content(followingTwo)
+      followingDFTwo = jsonlite::fromJSON(jsonlite::toJSON(followingContTwo))
+      
+      #Retrieves who the user is following
+      followingNumber = followingDFTwo$following
+      
+      #Retrieves the users followers
+      followersNumber = followingDFTwo$followers
+      
+      #Retrieves how many repositories the user has 
+      reposNumber = followingDFTwo$public_repos
+      
+      #Retrieves the year in which each user joined Github
+      yearJoined = substr(followingDFTwo$created_at, start = 1, stop = 4)
+      
+      #Adds the users data to a new row in dataframe
+      usersDB[nrow(usersDB) + 1, ] = c(followingLogin[j], followingNumber, followersNumber, reposNumber, yearJoined)
+      
+    }
+    next
+  }
 
-#Returns a dataframe with information on the Current Users repositoryitories, current user Dirk Wetter
-getrepositoryitory <- function(drwetter)
-{
-  i <- 1
-  x <- 1
-  repositoryitoryDF <- data_frame()
-  while(x!=0)
-  {
-    repository <- GET( paste0("https://api.github.com/users/", username, "/repository?per_page=100&page=", i),getToken)
-    repositoryContent <- content(repository)
-    currentrepositoryitoryDF <- lapply(repositoryContent, function(x) 
-    {
-      df <- data_frame(repo = x$name, id = x$id, commits = x$git_commits_url, language = x$languages) #language = x$language)
-    }) %>% bind_rows()
-    i <- i+1
-    x <- length(repositoryContent)
-    repositoryDF <- rbind(repositoryDF, currentrepositoryDF)
-  }
-  return (repositoryDF)
-}
+
