@@ -202,5 +202,28 @@ for (i in 1:length(users))
   }
   next
 }
+#Puts 10 most popular languages in table 
+allLanguages = sort(table(languages), increasing=TRUE)
+topTenLanguages = allLanguages[(length(allLanguages)-9):length(allLanguages)]
+
+#Converts to dataframe
+languageDF = as.data.frame(topTenLanguages)
+
+#Plot three shows the 10 most popular languages used by Dirk Wetter's 150 followers.
+#The data is represented by a bar chart.
+#X-axis displays 'languages'.
+#Y-axis displays 'number of users'.
+#Ruby is the most popular, followed by JavaScript.
+#C and Rust were determined to be the least popular languages.
+plotThree = plot_ly(data = languageDF, x = languageDF$languages, y = languageDF$Freq, type = "bar")
+plotThree
+
+Sys.setenv("plotly_username"="ofarreco")
+
+Sys.setenv("plotly_api_key"="Yny1ifZbRIf2iTexoNnh")
+#Sends graph to plotly
+api_create(plotThree, filename = "10 Most Popular Languages")
+#Plot can be viewed on plotly for more interactive visualisation of the data: https://plot.ly/~ofarreco/5/#/
+
 
 
