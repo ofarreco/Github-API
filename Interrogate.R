@@ -138,5 +138,69 @@ for(i in 1:length(user_ids))
     }
     next
   }
+ #Stops when there are more than 155 users
+  if(length(users) > 155)
+  {
+    break
+  }
+  next
+}
+
+#Creates a link to plotly to produce graphs.
+Sys.setenv("plotly_username"="ofarreco")
+Sys.setenv("plotly_api_key"="Yny1ifZbRIf2iTexoNnh")
+
+#Plot one graphs repositories vs followers by year using a scatter plot.
+#Takes into account 155 of Dirk Wetter's followers.
+#X-axis displays 'repositories' which shows the no. of repositories per user.
+#Y-axis displays 'followers' which shows the no. of followers of each each of Dirk Wetter's followers.
+plotOne = plot_ly(data = usersDB, x = ~repos, y = ~followers, text = ~paste("Followers: ", followers, "<br>Repos: ", repos, "<br>Date Created:", dateCreated), color = ~dateCreated)
+plotOne
+#Sends graph to plotly
+api_create(plotOne, filename = "Repos vs Followers")
+#Plot can be viewed on plotly for more interactive visualisation of the data: https://plot.ly/~ofarreco/1/#/
+
+#Plot two graphs following vs followers by year using a scatter plot.
+#Takes into account 150 of Dirk Wetter's followers.
+#X-axis displays 'following' which shows the no. of users followed by each of Sebastien's followers.
+#Y-axis displays 'followers' which shows the no. of followers of each of Dirk Wetter's followers.
+plotTwo = plot_ly(data = usersDB, x = ~following, y = ~followers, text = ~paste("Followers: ", followers, "<br>Following: ", following), color = ~dateCreated)
+plotTwo
+#Sends graph to plotly
+api_create(plotTwo, filename = "Following vs Followers")
+#Plot can be viewed on plotly for more interactive visualisation of the data: https://plot.ly/~ofarreco/3/
+
+#Below code is to produce plot 3.
+#Graph the 10 most popular languages used by Dirk Wetter's 155 followers.
+#Same 155 users from two previous plots are used.
+languages = c()
+
+for (i in 1:length(users))
+{
+  ReposUrl = paste("https://api.github.com/users/", users[i], "/repos", sep = "")
+  Repos = GET(ReposUrl, getToken)
+  ReposCont = content(Repos)
+  ReposDF = jsonlite::fromJSON(jsonlite::toJSON(ReposCont))
+  ReposNames = ReposDF$name
+  
+  #Loop through all the repositories of an individual user
+  for (j in 1: length(ReposNames))
+  {
+    #Find all repositories and save in data frame
+    ReposURLTwo = paste("https://api.github.com/repos/", users[i], "/", ReposNames[j], sep = "")
+    ReposTwo = GET(ReposURLTwo, getToken)
+    ReposContTwo = content(ReposTwo)
+    ReposDFTwo = jsonlite::fromJSON(jsonlite::toJSON(ReposContTwo))
+    language = ReposDFTwo$language
+    
+    #Removes repositories containing no specific languages
+    if (length(language) != 0 && language != "<NA>")
+    {
+      languages[length(languages)+1] = language
+    }
+    next
+  }
+  next
+}
 
 
